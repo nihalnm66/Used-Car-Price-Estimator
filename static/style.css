@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
+
+:root{
+  --glass: rgba(255,255,255,0.06);
+  --glow: rgba(255,255,255,0.12);
+  --accent1:#ffd200;
+  --danger:#ff4757;
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0; padding:0; height:100%;
+  font-family:'Poppins',sans-serif; color:#fff;
+  background:#000;
+}
+
+/* Fluid canvas lives behind everything */
+#fluid{
+  position:fixed; inset:0; width:100vw; height:100vh;
+  z-index:0; background:#000;
+}
+
+/* Main layout */
+.wrap{
+  min-height:100vh; display:grid; place-items:center;
+  position:relative; z-index:1; padding:24px;
+}
+
+/* Floating glass panel — softer, no hard rectangle look */
+.card{
+  width: 720px; max-width: 95vw;
+  background: var(--glass);
+  border-radius: 22px;
+  padding: 26px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 60px rgba(0,0,0,0.6), 0 0 40px var(--glow) inset;
+}
+
+/* Headings */
+.title{margin:0 0 4px; font-weight:700; font-size:1.9rem; color:var(--accent1)}
+.subtitle{margin:0 0 16px; opacity:.85; font-weight:300}
+
+/* Logo (kept between predictions) */
+.logo{width:92px; display:block; margin:8px auto 16px; filter:drop-shadow(0 0 10px #66f)}
+
+/* Form grid */
+.grid{
+  display:grid; grid-template-columns: repeat(2, minmax(0,1fr));
+  gap:12px;
+}
+
+/* Inputs & selects — readable on dark, visible options */
+input, select{
+  width:100%; padding:12px 12px;
+  border:none; outline:none; border-radius:12px;
+  background:#171717; color:#fff;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset;
+  transition: box-shadow .2s, transform .2s;
+  appearance: none;
+}
+input::placeholder{color:rgba(255,255,255,0.65)}
+input:focus, select:focus{transform:scale(1.02); box-shadow:0 0 0 2px #5cf inset}
+option{background:#151515; color:#fff}
+
+/* Buying price area spacing */
+#buyingPriceContainer input{margin-top:4px}
+
+/* Buttons */
+.buttons{display:flex; gap:12px; justify-content:center; margin-top:14px}
+.btn{padding:12px 18px; border-radius:12px; font-weight:700; text-decoration:none; border:none; cursor:pointer}
+.btn.primary{background:linear-gradient(90deg,#ff9f1a,#ffd200); color:#222}
+.btn.danger{background:var(--danger); color:#fff}
+.btn:hover{filter:brightness(1.05); transform:translateY(-1px)}
+
+/* Result */
+.result{
+  margin-top:16px; padding:14px; border-radius:12px;
+  background:rgba(255,255,255,0.12);
+  box-shadow: 0 0 18px rgba(255,255,255,0.16);
+}
+.result .pop{margin:0; font-size:1.2rem; font-weight:700}

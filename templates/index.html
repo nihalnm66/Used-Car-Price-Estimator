@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart AI Used Car Price Predictor</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <!-- GSAP for result reveal -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+
+  <!-- FULLSCREEN FLUID-PAINT BACKGROUND -->
+  <canvas id="fluid"></canvas>
+  <script>
+    // Lightweight "neon paint" effect (no external deps, no shaders)
+    // Idea: draw many colored smears that follow the mouse with inertia and bleed trails.
+    (() => {
+      const c = document.getElementById('fluid');
+      const ctx = c.getContext('2d');
+      let W, H, dpr;
+
+      function resize() {
+        dpr = Math.max(1, window.devicePixelRatio || 1);
+        W = c.width  = Math.floor(innerWidth  * dpr);
+        H = c.height = Math.floor(innerHeight * dpr);
+        c.style.width  = innerWidth + 'px';
+        c.style.height = innerHeight + 'px';
+        ctx.setTransform(1,0,0,1,0,0);
+      }
+      resize();
+      addEventListener('resize', resize);
+
+      // particles (smears)
+      const smears = [];
+      const colors = [
+        [  0, 180, 255], // cyan
+        [255,  60, 200], // magenta
+        [120,  80, 255], // purple
+        [ 30, 200, 255], // blue-teal
+      ];
+      let mouse = {x: W*0.5, y: H*0.5, vx:0, vy:0};
+
+      addEventListener('mousemove', e => {
+        const x = e.clientX * dpr, y = e.clientY * dpr;
+        mouse.vx = (x - mouse.x) * 0.18;
+        mouse.vy = (y - mouse.y) * 0.18;
+        mouse.x = x; mouse.y = y;
+
+        // inject a few smears on move
+        for (let i = 0; i < 6; i++) {
+          const col = colors[(Math.random() * colors.length) | 0];
+          smears.push({
+            x: mouse.x, y: mouse.y,
+            vx: (Math.random()-0.5)*8 * dpr + mouse.vx*0.4,
+            vy: (Math.random()-0.5)*8 * dpr + mouse.vy*0.4,
+            r:  Math.random()*30*dpr + 10*dpr,
+            life: 1,
+            color: `rgba(${col[0]},${col[1]},${col[2]},`,
+          });
+        }
+      });
+
+      // animation loop
+      function tick() {
+        // very transparent black to leave trails
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillRect(0,0,W,H);
+
+        ctx.globalCompositeOperation = 'lighter'; // additive glow
+        for (let i = smears.length - 1; i >= 0; i--) {
+          const p = smears[i];
+          p.x += p.vx; p.y += p.vy;
+          p.vx *= 0.965; p.vy *= 0.965;
+          p.life *= 0.972; // fade out
+          const alpha = Math.max(0, p.life*0.9);
+          const rad = Math.max(1, p.r * p.life);
+
+          // soft radial blob
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad);
+          g.addColorStop(0,   p.color + (alpha*0.8) + ')');
+          g.addColorStop(0.5, p.color + (alpha*0.28)+ ')');
+          g.addColorStop(1,   'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, rad, 0, Math.PI*2);
+          ctx.fill();
+
+          if (alpha < 0.02) smears.splice(i,1);
+        }
+        requestAnimationFrame(tick);
+      }
+      tick();
+    })();
+  </script>
+
+  <!-- APP UI -->
+  <div class="wrap">
+    <div class="card">
+      <h1 class="title">Smart AI Used Car Price Predictor</h1>
+      <p class="subtitle">Enter details to get an instant estimate</p>
+
+      <!-- brand logo (kept across predictions) -->
+      <img id="brandLogo" src="{{ url_for('static', filename='logos/default.png') }}" class="logo" alt="logo"/>
+
+      <form action="/predict" method="post" id="predictForm">
+        <div class="grid">
+          <!-- Brand -->
+          <select name="brand" id="brand" required>
+            <option value="">Select Brand</option>
+            {% set brands = ['Maruti','Hyundai','Tata','Honda','Mahindra','Toyota','BMW','Audi','Mercedes-Benz','Others'] %}
+            {% for b in brands %}
+              <option value="{{ b }}" {% if form and form.brand == b %}selected{% endif %}>{{ b }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Model (hidden when 'Others') -->
+          <select name="model" id="model" {% if form and form.brand == 'Others' %}style="display:none"{% endif %} required>
+            <option value="{{ form.model if form else '' }}">{{ form.model if form else 'Select Model' }}</option>
+          </select>
+
+          <!-- Year -->
+          <input type="number" name="year" placeholder="Year" min="2000" max="2025"
+                 value="{{ form.year if form else '' }}" required />
+
+          <!-- KM Driven -->
+          <input type="number" name="km_driven" placeholder="KM Driven" min="0"
+                 value="{{ form.km_driven if form else '' }}" required />
+
+          <!-- Fuel -->
+          <select name="fuel">
+            {% for f in ['Petrol','Diesel','CNG','LPG'] %}
+              <option value="{{ f }}" {% if form and form.fuel == f %}selected{% endif %}>{{ f }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Transmission -->
+          <select name="transmission">
+            {% for t in ['Manual','Automatic'] %}
+              <option value="{{ t }}" {% if form and form.transmission == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select>
+
+          <!-- Owner -->
+          <select name="owner">
+            {% for o in [1,2,3,4] %}
+              <option value="{{ o }}" {% if form and form.owner == o %}selected{% endif %}>{{ o }} Owner{{ 's' if o>1 else '' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Buying Price (ONLY for Others) -->
+        <div id="buyingPriceContainer"
+             style="display: {% if form and form.brand == 'Others' %}block{% else %}none{% endif %}; margin-top:12px;">
+          <input type="number" name="buying_price" placeholder="Buying Price (₹)"
+                 value="{{ form.buying_price if form else '' }}" />
+        </div>
+
+        <div class="buttons">
+          <button type="submit" class="btn primary">Predict Price</button>
+          <a href="/" class="btn danger" id="resetBtn">Reset</a>
+        </div>
+      </form>
+
+      {% if prediction_text %}
+      <div class="result">
+        <h2 class="pop">{{ prediction_text }}</h2>
+      </div>
+      <script>
+        // animate result only
+        gsap.from(".pop", {duration: 1.1, opacity: 0, y: 50, ease: "back.out(1.8)"});
+      </script>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
