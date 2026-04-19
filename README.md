@@ -20,7 +20,7 @@ The core intelligence of the system is built through a rigorous 4-step process:
 1. **Data Preprocessing**: Handling missing values, removing outliers, and cleaning the dataset.
 2. **Feature Engineering**: Transforming raw vehicle data into meaningful inputs for the regression model.
 3. **Model Training**: Utilizing RandomForest Regression to capture complex patterns in car pricing.
-4. **Evaluation**: Assessing performance through metrics such as $R^2$ (Coefficient of Determination) and Mean Absolute Error (MAE).
+4. **Evaluation**: Assessing performance through metrics such as $R^2$ (Coefficient of Determination) and MAE (Mean Absolute Error).
 
 ## 📁 Project Structure
 ```text
